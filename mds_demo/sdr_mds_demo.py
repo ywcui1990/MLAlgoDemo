@@ -95,7 +95,7 @@ def randomProjection(sdrs):
 if __name__ == "__main__":
   numSDRclasses = 7
   numSDRsPerClass = 20
-  noiseLevel = 0.5
+  noiseLevel = 0.1
 
   # SDR parameters
   n = 1024
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     selectPts = np.arange(numSDRsPerClass) + i * numSDRsPerClass
     plt.plot(npos[selectPts, 0], npos[selectPts, 1], colorList[i] + 'o')
   plt.title('MDS, noise level: {}'.format(noiseLevel))
-  plt.savefig('MDS_clusterN_{}_noiseLevel_{}.pdf'.format(numSDRclasses,
+  plt.savefig('MDS_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
                                                          noiseLevel))
 
   # visualize SDR clusters with random projection
@@ -149,5 +149,5 @@ if __name__ == "__main__":
     selectPts = np.arange(numSDRsPerClass) + i * numSDRsPerClass
     plt.plot(sdrsPos[selectPts, 0], sdrsPos[selectPts, 1], colorList[i] + 'o')
   plt.title('Random Projection, noise level: {}'.format(noiseLevel))
-  plt.savefig('RandomProj_clusterN_{}_noiseLevel_{}.pdf'.format(numSDRclasses,
+  plt.savefig('RandomProj_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
                                                                 noiseLevel))
