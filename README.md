@@ -1,0 +1,1 @@
+This repository contains demo scripts for several machine learning algorithms. It is for learning and research purpose. 
