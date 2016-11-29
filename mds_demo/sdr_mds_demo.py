@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 from matplotlib import pyplot as plt
-from sklearn import manifold
+from sklearn import manifold, random_projection
 
 plt.ion()
 plt.close('all')
@@ -92,32 +92,56 @@ def randomProjection(sdrs):
 
 
 
+def plot_embedding(X, y, title=None):
+  x_min, x_max = np.min(X, 0), np.max(X, 0)
+  X = (X - x_min) / (x_max - x_min)
+
+  plt.figure()
+  ax = plt.subplot(111)
+  colorList = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
+  for i in range(X.shape[0]):
+    plt.plot(X[i, 0], X[i, 1],
+             colorList[y[i]]+'o')
+
+  plt.xticks([]), plt.yticks([])
+  if title is not None:
+    plt.title(title)
+
+
+
 if __name__ == "__main__":
-  numSDRclasses = 7
+  numSDRclasses = 5
   numSDRsPerClass = 20
-  noiseLevel = 0.1
+  noiseLevel = 0.5
 
   # SDR parameters
   n = 1024
   w = 20
 
-  sdrs = []
+  sdrs = np.zeros((numSDRclasses*numSDRsPerClass, n))
+  classLabel = np.zeros((numSDRclasses*numSDRsPerClass, ), dtype='int')
   for i in range(numSDRclasses):
     templateSDR = generateSDR(n, w)
     for j in range(numSDRsPerClass):
       noisySDR = copy.copy(templateSDR)
       corruptSparseVector(noisySDR, noiseLevel)
-      sdrs.append(noisySDR)
+      sdrs[i*numSDRsPerClass+j, :] = noisySDR
+      classLabel[i * numSDRsPerClass + j] = i
 
-  numSDRs = len(sdrs)
+  numSDRs = sdrs.shape[0]
   # calculate pairwise distance
   distanceMat = np.zeros((numSDRs, numSDRs), dtype=np.float64)
   for i in range(numSDRs):
     for j in range(numSDRs):
-      distanceMat[i, j] = 1 - percentOverlap(sdrs[i], sdrs[j])
+      distanceMat[i, j] = 1 - percentOverlap(sdrs[i, ], sdrs[j, ])
 
   seed = np.random.RandomState(seed=3)
 
+  # plot distance matrix
+  plt.figure()
+  plt.imshow(distanceMat)
+
+  # visualize SDR clusters with MDS
   mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
                      dissimilarity="precomputed", n_jobs=1)
   pos = mds.fit(distanceMat).embedding_
@@ -125,29 +149,28 @@ if __name__ == "__main__":
   nmds = manifold.MDS(n_components=2, metric=False, max_iter=3000, eps=1e-12,
                       dissimilarity="precomputed", random_state=seed, n_jobs=1,
                       n_init=1)
-  npos = nmds.fit_transform(distanceMat, init=pos)
+  Xmds = nmds.fit_transform(distanceMat, init=pos)
 
-  # plot distance matrix
-  plt.figure()
-  plt.imshow(distanceMat)
-
-  # visualize SDR clusters with MDS
-  plt.figure()
-  colorList = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
-  for i in range(numSDRclasses):
-    selectPts = np.arange(numSDRsPerClass) + i * numSDRsPerClass
-    plt.plot(npos[selectPts, 0], npos[selectPts, 1], colorList[i] + 'o')
-  plt.title('MDS, noise level: {}'.format(noiseLevel))
+  plot_embedding(Xmds, classLabel,
+                 title='MDS, noise level: {}'.format(noiseLevel))
   plt.savefig('MDS_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
                                                          noiseLevel))
 
+  # visualize SDR clusters with tSNE
+  print("Computing t-SNE embedding")
+  tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
+  Xtsne = tsne.fit_transform(sdrs)
+
+  plot_embedding(Xtsne, classLabel,
+                 title='tSNE, noise level: {}'.format(noiseLevel))
+  plt.savefig('tSNE_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
+                                                         noiseLevel))
+
   # visualize SDR clusters with random projection
-  sdrsPos = randomProjection(sdrs)
-  plt.figure()
-  colorList = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
-  for i in range(numSDRclasses):
-    selectPts = np.arange(numSDRsPerClass) + i * numSDRsPerClass
-    plt.plot(sdrsPos[selectPts, 0], sdrsPos[selectPts, 1], colorList[i] + 'o')
-  plt.title('Random Projection, noise level: {}'.format(noiseLevel))
+  rp = random_projection.GaussianRandomProjection(n_components=2,
+                                                  random_state=42)
+  X_projected = rp.fit_transform(sdrs)
+  plot_embedding(X_projected, classLabel,
+                 title='Random Projection, noise level: {}'.format(noiseLevel))
   plt.savefig('RandomProj_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
                                                                 noiseLevel))
