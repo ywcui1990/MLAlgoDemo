@@ -101,7 +101,7 @@ def plot_embedding(X, y, title=None):
   colorList = ['r', 'b', 'g', 'c', 'm', 'y', 'k']
   for i in range(X.shape[0]):
     plt.plot(X[i, 0], X[i, 1],
-             colorList[y[i]]+'o')
+             color=plt.cm.Set1(float(y[i]) / np.max(y)), marker='o')
 
   plt.xticks([]), plt.yticks([])
   if title is not None:
@@ -112,7 +112,7 @@ def plot_embedding(X, y, title=None):
 if __name__ == "__main__":
   numSDRclasses = 5
   numSDRsPerClass = 20
-  noiseLevel = 0.5
+  noiseLevel = 0.1
 
   # SDR parameters
   n = 1024
@@ -142,6 +142,7 @@ if __name__ == "__main__":
   plt.imshow(distanceMat)
 
   # visualize SDR clusters with MDS
+  print "Computing MDS embedding"
   mds = manifold.MDS(n_components=2, max_iter=3000, eps=1e-9, random_state=seed,
                      dissimilarity="precomputed", n_jobs=1)
   pos = mds.fit(distanceMat).embedding_
@@ -152,25 +153,28 @@ if __name__ == "__main__":
   Xmds = nmds.fit_transform(distanceMat, init=pos)
 
   plot_embedding(Xmds, classLabel,
-                 title='MDS, noise level: {}'.format(noiseLevel))
-  plt.savefig('MDS_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
-                                                         noiseLevel))
+                 title='MDS, N: {} M: {} noise : {}'.format(
+                   numSDRclasses, numSDRsPerClass, noiseLevel))
+  plt.savefig('figures/MDS_clusterN_{}_M_{}_noiseLevel_{}.png'.format(
+    numSDRclasses, numSDRsPerClass, noiseLevel))
 
   # visualize SDR clusters with tSNE
-  print("Computing t-SNE embedding")
+  print "Computing t-SNE embedding"
   tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
   Xtsne = tsne.fit_transform(distanceMat)
 
   plot_embedding(Xtsne, classLabel,
-                 title='tSNE, noise level: {}'.format(noiseLevel))
-  plt.savefig('tSNE_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
-                                                         noiseLevel))
+                 title='tSNE, N: {} M: {} noise : {}'.format(
+                   numSDRclasses, numSDRsPerClass, noiseLevel))
+  plt.savefig('figures/tSNE_clusterN_{}_M_{}_noiseLevel_{}.png'.format(
+    numSDRclasses, numSDRsPerClass, noiseLevel))
 
   # visualize SDR clusters with random projection
   rp = random_projection.GaussianRandomProjection(n_components=2,
                                                   random_state=42)
   X_projected = rp.fit_transform(sdrs)
   plot_embedding(X_projected, classLabel,
-                 title='Random Projection, noise level: {}'.format(noiseLevel))
-  plt.savefig('RandomProj_clusterN_{}_noiseLevel_{}.png'.format(numSDRclasses,
-                                                                noiseLevel))
+                 title='Random Projection, N: {} M: {} noise : {}'.format(
+                   numSDRclasses, numSDRsPerClass, noiseLevel))
+  plt.savefig('figures/RandomProj_clusterN_{}_M_{}_noiseLevel_{}.png'.format(
+    numSDRclasses, numSDRsPerClass, noiseLevel))
