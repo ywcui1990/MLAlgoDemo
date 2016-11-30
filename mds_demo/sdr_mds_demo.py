@@ -159,7 +159,7 @@ if __name__ == "__main__":
   # visualize SDR clusters with tSNE
   print("Computing t-SNE embedding")
   tsne = manifold.TSNE(n_components=2, init='pca', random_state=0)
-  Xtsne = tsne.fit_transform(sdrs)
+  Xtsne = tsne.fit_transform(distanceMat)
 
   plot_embedding(Xtsne, classLabel,
                  title='tSNE, noise level: {}'.format(noiseLevel))
